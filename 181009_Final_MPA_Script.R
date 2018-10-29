@@ -1,6 +1,11 @@
 
 # Using R version 3.3.2
 
+#####################
+
+# IMPORTANT - ALL INPUT FILES CAN BE ACCESSED FROM: https://figshare.com/account/home#/projects/35711
+
+#####################
 
 # STEP 1 - CALCULATE PRESSURE VALUES FOR DIFFERENT AREAS (MPAs, UNPROTECTED AND EEZs)
 
@@ -18,7 +23,7 @@ library(magrittr)
 
 #set working directory
 
-basedir <- "C:/Users/Simone/Dropbox/Papers/MPA paper/2018_MPA_Repo"
+basedir <- "#Your working directory filepath here"
 
 setwd(basedir)
 
@@ -43,7 +48,7 @@ directory_files<-function(directory){
   
 }
 
-#load processed area and pressure files
+#load processed area and pressure files - save files in folders names (1_area_rasters/ & 2_pressure_rasters) as below in the working directory
 
 area_files <- list.files(path='1_area_rasters/', 
                          pattern =".tif$", full.names=TRUE)
@@ -136,7 +141,7 @@ names(parent_area_list) <- area_names
 
 load('')
 
-#read in raw attribute table pulled from shapefile in ArcGIS
+#read in raw attribute table pulled from shapefile in ArcGIS (make sure you have saved files in 3_area_attribute_tables as downloaded)
 
 eez_attributes<-read.csv('3_area_attribute_tables/9_2013_attributes_eez.csv')
 
@@ -160,7 +165,7 @@ unprotected_attributes_clean$category[unprotected_attributes_clean$category == "
 
 ##FOR MPA FILES (can disregard warnings about column classes)
 
-mpa_attributes_list<-directory_files('3_area_attribute_tables/mpa_attributes/')
+mpa_attributes_list<-directory_files('4_mpa_attribute_tables')
 
 # Subset the raw attribute tables and rename the columns, save as a new list
 
