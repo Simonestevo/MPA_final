@@ -3,7 +3,7 @@
 
 #####################
 
-# IMPORTANT - ALL INPUT FILES CAN BE ACCESSED FROM: https://figshare.com/account/home#/projects/35711
+# IMPORTANT - ALL INPUT FILES CAN BE ACCESSED FROM THE LINKS PROVIDED IN THE README OF THIS REPO
 
 #####################
 
