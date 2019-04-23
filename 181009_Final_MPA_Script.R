@@ -50,13 +50,13 @@ directory_files<-function(directory){
 
 #load processed area and pressure files - save files in folders names (1_area_rasters/ & 2_pressure_rasters) as below in the working directory
 
-area_files <- list.files(path='1_area_rasters/', 
+area_files <- list.files(path='2018_MPA_Input_files/1_area_rasters/', 
                          pattern =".tif$", full.names=TRUE)
 
 area_list<-lapply(area_files,raster)
 
 
-pressure_files <- list.files(path='2_pressure_rasters/', 
+pressure_files <- list.files(path='2018_MPA_Input_files/2_pressure_rasters/', 
                              pattern =".tif$", full.names=TRUE)
 
 pressure_list<-lapply(pressure_files,raster)
@@ -139,11 +139,11 @@ names(parent_area_list) <- area_names
 
 #NOTE - if you don't have enough computing power to complete the above steps, can begin here by loading the parent area list .rda file
 
-load('')
+load('2018_MPA_Input_files/5_processed_data/2018-08-17_parent_area_list.rda')
 
 #read in raw attribute table pulled from shapefile in ArcGIS (make sure you have saved files in 3_area_attribute_tables as downloaded)
 
-eez_attributes<-read.csv('3_area_attribute_tables/9_2013_attributes_eez.csv')
+eez_attributes<-read.csv('2018_MPA_Input_files/3_area_attribute_tables/9_2013_attributes_eez.csv')
 
 #subset relevant columns and add some to make it match the columns in the mpa files
 
@@ -165,7 +165,7 @@ unprotected_attributes_clean$category[unprotected_attributes_clean$category == "
 
 ##FOR MPA FILES (can disregard warnings about column classes)
 
-mpa_attributes_list<-directory_files('4_mpa_attribute_tables')
+mpa_attributes_list<- directory_files('2018_MPA_Input_files/4_mpa_attribute_tables')
 
 # Subset the raw attribute tables and rename the columns, save as a new list
 
@@ -209,17 +209,17 @@ remove_junk_cols<-function(dataframe) {
 #and then aggregates the attributes and list of individual pressure dataframes into a single dataframe 
 #for each area category
 
-aggregate_pressures <- function (attribute_df, area_list) {
+aggregate_pressures <- function(attribute_df, area_list) {
   
-  attributes_subset<-subset_by_row(attribute_df,area_list[[1]])
+  attributes_subset <- subset_by_row(attribute_df,area_list[[1]])
   
   unlisted_df <- do.call(cbind,area_list)
   
-  colnames(unlisted_df)[colnames(unlisted_df)=="acid_id"] <- "matchid"
+  colnames(unlisted_df)[colnames(unlisted_df) == "acid_id"] <- "matchid"
   
-  area_all_pressures <- merge(attributes_subset, unlisted_df, by="matchid")
+  area_all_pressures <- merge(attributes_subset, unlisted_df, by = "matchid")
   
-  area_all_pressures<-remove_junk_cols(area_all_pressures)
+  area_all_pressures <- remove_junk_cols(area_all_pressures)
   
 }
 
@@ -227,13 +227,13 @@ aggregate_pressures <- function (attribute_df, area_list) {
 #should end up with 9 dataframes (one for each area, 7 MPA levels, unprotected areas and eezs)
 #each df should have 103 columns (attributes plus pressures)
 
-final_areas_list<-list()
+final_areas_list <- list()
 
 for (i in 1:9) {
   
   final_areas_list[[i]] <- aggregate_pressures(clean_list[[i]], parent_area_list[[i]])
 
-  }
+}
 
 
 #separate eez data from the other areas so it can be used to scale mpa values later on
@@ -261,13 +261,12 @@ area_means <- subset_means(area_pressures_df)
 
 #add territory column to the EEZ means dataframe and remove eez rows that are territories (can disregard warnings re: colclasses) 
 
-territories <- read_csv('3_area_attribute_tables/2013_territory_list.csv')
+territories <- read_csv('2018_MPA_Input_files/3_area_attribute_tables/2013_territory_list.csv')
 
 eez_territories_join <- left_join(eez_means, territories)
 
-eez_parent<-eez_territories_join %>%
-  
-  filter(territory=='0'|territory=='2')
+eez_parent <- eez_territories_join %>%
+              filter(territory == '0'|territory == '2')
 
 
 #function to remove all contested zones, incomplete rows etc.
@@ -277,7 +276,7 @@ complete_cases_only <- function(data) {
     data %>%
     filter(!parentiso3 =='conflict/contested zone') %>%
     filter(complete.cases(.)) %>%
-    distinct ()
+    distinct()
     
 }
 
@@ -287,7 +286,7 @@ eez_means_complete <- complete_cases_only(eez_parent)
 
 area_means_complete <- complete_cases_only(area_means)
 
-#check there are eez values for every mpa, otherwise following loop will fail
+#check there are eez values for every mpa, otherwise subsequent loop will fail
 
 area_parentiso3 <- area_means_complete$parentiso3
 eez_parentiso3 <- eez_means_complete$parentiso3
@@ -329,7 +328,7 @@ for(i in 1 : nrow(area_means_matched)){
 #add attribute columns back to scaled dataframe
 
 colnames(area_scaled)<- colnames(area_means_matched[9:26])
-mpa_df<-cbind(area_means_matched[1:8],area_scaled)
+mpa_df<-cbind(area_means_matched[1:8],area_scaled, area_means_matched[27])
 
 # Loop produces NA values when the EEZ and MPA pressure value is zero because dividing by zero,
 # need to turn them back to zero
@@ -347,13 +346,11 @@ mpa_df <- mpa_df[!no.inf,]
 objectname <- paste(currentDate,"_scaled_by_eez_mpa_df",".rda",sep="")
 save(mpa_df, file=paste(output_file_path,objectname, sep = "/" ))
 
-
-
 ## STEP 3 - STATISTICS, TABLES AND FIGURES
 
 ##IF STARTING FROM HERE, LOAD MPA DF
 
-load('2018-09-05_output_files/2018-09-05_scaled_by_eez_mpa_df.rda')
+load('2018_MPA_Input_files/5_processed_data/2018-09-05_scaled_by_eez_mpa_df.rda')
 
 #libraries for stats, figures and tables
 
@@ -383,9 +380,9 @@ pressure_df <- cbind(pressures, manageable, parameters)
 
 ## Create boxplot dataframe
 
-raw_boxplot_df<-area_means_matched
+raw_boxplot_df <- area_means_matched
 
-id_variables <-colnames(raw_boxplot_df[c(1:8, 27)])
+id_variables <- colnames(raw_boxplot_df[c(1:8, 27)])
 
 raw_melted_boxplot_df <- melt(raw_boxplot_df, id.vars = id_variables)
 
@@ -431,13 +428,71 @@ dev.off()
 
 table_s2 <- as.data.frame(cor(mpa_df[,9:26], method = "pearson"))
 
-names(table_s2) <- pressures
-rownames(table_s2) <- pressures
+names(table_s2) <- parameters
+rownames(table_s2) <- parameters
 
-# Save collinearity table S2
+#Return combinations of variables that exceed the 
+#correlation threshold of 0.7 (see Dormann etal. 2013)
+
+threshold <- 0.7
+
+over.threshold.df <- data.frame()
+
+for (i in 1:nrow(table_s2)) {
+  
+  for (j in 1:ncol(table_s2)) {
+    
+    over.threshold.df[i,j] <- (table_s2[i,j] > threshold) & #Which pairs exceed 0.7
+                  (colnames(table_s2[j]) != rownames(table_s2[i,])) #That aren't the same variable (i.e. fert * fert)
+    
+    }
+
+}
+
+names(over.threshold.df) <- parameters #Add column names
+rownames(over.threshold.df) <- parameters #Add row names
+
+correlated <- which(over.threshold.df == TRUE,arr.ind = T) #Return matrix of variables that exhibit multicollinearity
+corr_vars <- correlated[,1]
+
+#Correlated matrix shows following pairs exhibit collinearity:
+#Inorganic & Pesticide
+#Fertiliser & Pesticide
+#Fertiliser & Inorganic
+#Human impacts & Night light pollution
+
+#Inorganic, fertiliser and pesticide pollution distribution were all modeled
+#using the same methods and are highly correlated, therefore we can drop inorganic
+#and fertiliser, and leave pesticide with the assumption its distribution is
+#an adequate representation of all land-based runoff pollution.
+
+#Likewise, night light pollution and human impacts are both directly related
+#to population density.  Given night light pollution is a function of human
+#settlements, we can remove it and include only human impacts as representative.
+
+#Subset corr_vars to only those variables we want to remove 
+#(inorganic, fertiliser & night light pollution)
+
+corr_remove <- corr_vars[c(1,3,5)]
+table_s2_2 <- dplyr::select(table_s2, -corr_remove)
+table_s3 <- table_s2_2[-c(6,7,9),]
+
+#Rename columns and rows for table_s2 and s3
+
+pressures_2 <- pressures[-c(6,7,9)]
+
+names(table_s2) <- pressures_2
+rownames(table_s2) <- pressures_2
+names(table_s3) <- pressures_2
+rownames(table_s3) <- pressures_2
+
+# Save collinearity tables S2 & s3
 
 objectname <- paste(currentDate,"_table_S2",".csv",sep="")
 write.csv(table_s2, file=paste(output_file_path,objectname, sep = "/" ))
+
+objectname <- paste(currentDate,"_table_S3",".csv",sep="")
+write.csv(table_s3, file=paste(output_file_path,objectname, sep = "/" ))
 
 ##Transform covariates##
 
@@ -520,8 +575,8 @@ dev.off()
 mpa_glm_result<-glm(M~1,family=binomial,data=mpa_df)
 
 mpa_step_glm <- stepAIC(mpa_glm_result,scope = list(upper= ~acid_pressure_mean+art_pressure_mean+dd_pressure_mean+
-                                                      dndhbc_pressure_mean+dndlbc_pressure_mean+fert_pressure_mean+inorg_pressure_mean+
-                                                      invas_pressure_mean+night_pressure_mean+pest_pressure_mean+phbc_pressure_mean+plbc_pressure_mean+
+                                                      dndhbc_pressure_mean+dndlbc_pressure_mean+fert_pressure_mean+inorg_pressure_mean+pest_pressure_mean+
+                                                      invas_pressure_mean+night_pressure_mean+phbc_pressure_mean+plbc_pressure_mean+
                                                       poll_pressure_mean+pop_pressure_mean+ship_pressure_mean+slr_pressure_mean+sst_pressure_mean+
                                                       uv_pressure_mean,lower=~1))
 
@@ -546,8 +601,8 @@ for (i in 1:7){
   
   cat_mods[[i]] <- stepAIC(mpa.cat,scope = list(upper= ~acid_pressure_mean+art_pressure_mean+dd_pressure_mean+
                                                            dndhbc_pressure_mean+dndlbc_pressure_mean+fert_pressure_mean+
-                                                           inorg_pressure_mean+invas_pressure_mean+night_pressure_mean+
-                                                           pest_pressure_mean+phbc_pressure_mean+plbc_pressure_mean+poll_pressure_mean+
+                                                           invas_pressure_mean+night_pressure_mean+ #pest_pressure_mean+inorg_pressure_mean+
+                                                           phbc_pressure_mean+plbc_pressure_mean+poll_pressure_mean+
                                                            pop_pressure_mean+ship_pressure_mean+slr_pressure_mean+sst_pressure_mean+uv_pressure_mean,lower=~1))
   
   
@@ -700,10 +755,13 @@ figure_1_df <- mutate(figure_1_df,
 
 figure_1_df <- mutate(figure_1_df, 
                       legend = ifelse(significant == TRUE,
-                                      ifelse(manageable == TRUE,"Manageable, significant effect","Not-manageable, significant effect"),
+                                      ifelse(manageable == TRUE,"Manageable, 
+                                             significant effect","Not-manageable,
+                                             significant effect"),
                                       "Not significant"))
 
-figure_1_df <- mutate(figure_1_df, y_axis_cols = ifelse(manageable == TRUE, "#253494", "#41B6C4"))
+figure_1_df <- mutate(figure_1_df, y_axis_cols = ifelse(manageable == TRUE,
+                                                        "#253494", "#41B6C4"))
 
 #Save figure 1 dataframe if needed
 

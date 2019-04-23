@@ -2,3 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+packrat/lib*/
+2018_MPA_Input_files/
+Output_files
