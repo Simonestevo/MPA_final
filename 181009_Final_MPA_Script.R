@@ -350,7 +350,7 @@ save(mpa_df, file=paste(output_file_path,objectname, sep = "/" ))
 
 ##IF STARTING FROM HERE, LOAD MPA DF
 
-load('2018_MPA_Input_files/5_processed_data/2018-09-05_scaled_by_eez_mpa_df.rda')
+load('2018_MPA_Input_files/5_processed_data/2019-04-23_scaled_by_eez_mpa_df.rda')
 
 #libraries for stats, figures and tables
 
@@ -434,7 +434,7 @@ rownames(table_s2) <- parameters
 #Return combinations of variables that exceed the 
 #correlation threshold of 0.7 (see Dormann etal. 2013)
 
-threshold <- 0.7
+threshold <- 0.6
 
 over.threshold.df <- data.frame()
 
@@ -455,6 +455,7 @@ rownames(over.threshold.df) <- parameters #Add row names
 correlated <- which(over.threshold.df == TRUE,arr.ind = T) #Return matrix of variables that exhibit multicollinearity
 corr_vars <- correlated[,1]
 
+
 #Correlated matrix shows following pairs exhibit collinearity:
 #Inorganic & Pesticide
 #Fertiliser & Pesticide
@@ -463,7 +464,7 @@ corr_vars <- correlated[,1]
 
 #Inorganic, fertiliser and pesticide pollution distribution were all modeled
 #using the same methods and are highly correlated, therefore we can drop inorganic
-#and fertiliser, and leave pesticide with the assumption its distribution is
+#and pesticide, and leave fertiliser with the assumption its distribution is
 #an adequate representation of all land-based runoff pollution.
 
 #Likewise, night light pollution and human impacts are both directly related
@@ -471,7 +472,7 @@ corr_vars <- correlated[,1]
 #settlements, we can remove it and include only human impacts as representative.
 
 #Subset corr_vars to only those variables we want to remove 
-#(inorganic, fertiliser & night light pollution)
+#(inorganic, pesticide & night light pollution)
 
 corr_remove <- corr_vars[c(1,3,5)]
 table_s2_2 <- dplyr::select(table_s2, -corr_remove)
@@ -508,9 +509,9 @@ mpa_df[,c(9:26)]<-scale(mpa_df[,c(9:26)])
 
 mpa_df[,c(9:26)] <- apply((mpa_df[,c(9:26)]), 2,"*", 10) 
 
-mpa_df$pest_pressure_mean <- mpa_df$pest_pressure_mean*10
-mpa_df$fert_pressure_mean <- mpa_df$fert_pressure_mean*10
-mpa_df$uv_pressure_mean <- mpa_df$uv_pressure_mean*10
+#mpa_df$pest_pressure_mean <- mpa_df$pest_pressure_mean*10
+#mpa_df$fert_pressure_mean <- mpa_df$fert_pressure_mean*10
+#mpa_df$uv_pressure_mean <- mpa_df$uv_pressure_mean*10
 
 
 
@@ -564,7 +565,6 @@ figure_s2
 
 dev.off()
 
-
 ### SLOW CODE ### may take a minute or so
 
 #GLM for general model - all protected v unprotected only
@@ -575,9 +575,10 @@ dev.off()
 mpa_glm_result<-glm(M~1,family=binomial,data=mpa_df)
 
 mpa_step_glm <- stepAIC(mpa_glm_result,scope = list(upper= ~acid_pressure_mean+art_pressure_mean+dd_pressure_mean+
-                                                      dndhbc_pressure_mean+dndlbc_pressure_mean+fert_pressure_mean+inorg_pressure_mean+pest_pressure_mean+
-                                                      invas_pressure_mean+night_pressure_mean+phbc_pressure_mean+plbc_pressure_mean+
-                                                      poll_pressure_mean+pop_pressure_mean+ship_pressure_mean+slr_pressure_mean+sst_pressure_mean+
+                                                      dndhbc_pressure_mean+dndlbc_pressure_mean+inorg_pressure_mean+
+                                                      invas_pressure_mean+phbc_pressure_mean+plbc_pressure_mean+
+                                                      pop_pressure_mean+ship_pressure_mean+ #poll_pressure_mean+
+                                                      slr_pressure_mean+sst_pressure_mean+
                                                       uv_pressure_mean,lower=~1))
 
 
@@ -599,11 +600,12 @@ for (i in 1:7){
   
   mpa.cat <- glm(M~1,family=binomial,data=temp)
   
-  cat_mods[[i]] <- stepAIC(mpa.cat,scope = list(upper= ~acid_pressure_mean+art_pressure_mean+dd_pressure_mean+
-                                                           dndhbc_pressure_mean+dndlbc_pressure_mean+fert_pressure_mean+
-                                                           invas_pressure_mean+night_pressure_mean+ #pest_pressure_mean+inorg_pressure_mean+
-                                                           phbc_pressure_mean+plbc_pressure_mean+poll_pressure_mean+
-                                                           pop_pressure_mean+ship_pressure_mean+slr_pressure_mean+sst_pressure_mean+uv_pressure_mean,lower=~1))
+  cat_mods[[i]] <- stepAIC(mpa.cat,scope = list(upper = ~acid_pressure_mean+art_pressure_mean+dd_pressure_mean+
+                                                  dndhbc_pressure_mean+dndlbc_pressure_mean+inorg_pressure_mean+
+                                                  invas_pressure_mean+phbc_pressure_mean+plbc_pressure_mean+
+                                                  pop_pressure_mean+ship_pressure_mean+ #poll_pressure_mean+
+                                                  slr_pressure_mean+sst_pressure_mean+
+                                                  uv_pressure_mean,lower = ~1))
   
   
   
@@ -615,6 +617,8 @@ for (i in 1:7){
 #add all outputs into one list
 
 all_mods <- c(list(mpa_step_glm), cat_mods)
+
+lapply(all_mods, vif)
 
 #Save models as r data file if needed
 
@@ -807,12 +811,12 @@ figure_1 <- figure_1 + facet_wrap(~ category, nrow = 2, scales = "free_x") +
             scale_colour_manual(values=c("#253494","#41B6C4", "#737373")) +
             scale_fill_manual(values=c("#41B6C4","#253494","#737373")) +
             theme(strip.text.x = element_text(size = 11), 
-            strip.background = element_rect(fill="#B3B3B3"),
+            strip.background = element_rect(fill ="#B3B3B3"),
             panel.spacing = unit(1, "lines")) +
-            labs(x="") 
+            labs(x = "") 
             
 
-figure_1 <- figure_1 + theme(legend.position="none")
+figure_1 <- figure_1 + theme(legend.position ="none")
 
 figure_1
 
