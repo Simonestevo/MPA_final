@@ -499,21 +499,17 @@ write.csv(table_s3, file=paste(output_file_path,objectname, sep = "/" ))
 
 #log transformation
 
-mpa_df[, 9:23] <- log(mpa_df[,9:23]+1)
+mpa_df[, 9:23] <- log(mpa_df[,9:23] + 1)
 
 #scale data
 
-mpa_df[,c(9:26)]<-scale(mpa_df[,c(9:26)])
+mpa_df[,c(9:26)] <- scale(mpa_df[,c(9:26)])
 
 #multiply everything by ten (brings model estimates onto the same scale)
 
 mpa_df[,c(9:26)] <- apply((mpa_df[,c(9:26)]), 2,"*", 10) 
 
-#mpa_df$pest_pressure_mean <- mpa_df$pest_pressure_mean*10
-#mpa_df$fert_pressure_mean <- mpa_df$fert_pressure_mean*10
-#mpa_df$uv_pressure_mean <- mpa_df$uv_pressure_mean*10
-
-
+#Save transformed df if needed
 
 objectname <- paste(currentDate,"_mpa_df_transformed",".rda",sep="")
 write.csv(mpa_df, file=paste(output_file_path,objectname, sep = "/" ))
