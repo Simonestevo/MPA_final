@@ -424,77 +424,6 @@ figure_s1
 
 dev.off()
 
-#Pearson's correlation test for multicollinearity
-
-table_s2 <- as.data.frame(cor(mpa_df[,9:26], method = "pearson"))
-
-names(table_s2) <- parameters
-rownames(table_s2) <- parameters
-
-#Return combinations of variables that exceed the 
-#correlation threshold of 0.7 (see Dormann etal. 2013)
-
-threshold <- 0.6
-
-over.threshold.df <- data.frame()
-
-for (i in 1:nrow(table_s2)) {
-  
-  for (j in 1:ncol(table_s2)) {
-    
-    over.threshold.df[i,j] <- (table_s2[i,j] > threshold) & #Which pairs exceed 0.7
-                  (colnames(table_s2[j]) != rownames(table_s2[i,])) #That aren't the same variable (i.e. fert * fert)
-    
-    }
-
-}
-
-names(over.threshold.df) <- parameters #Add column names
-rownames(over.threshold.df) <- parameters #Add row names
-
-correlated <- which(over.threshold.df == TRUE,arr.ind = T) #Return matrix of variables that exhibit multicollinearity
-corr_vars <- correlated[,1]
-
-
-#Correlated matrix shows following pairs exhibit collinearity:
-#Inorganic & Pesticide
-#Fertiliser & Pesticide
-#Fertiliser & Inorganic
-#Human impacts & Night light pollution
-
-#Inorganic, fertiliser and pesticide pollution distribution were all modeled
-#using the same methods and are highly correlated, therefore we can drop inorganic
-#and pesticide, and leave fertiliser with the assumption its distribution is
-#an adequate representation of all land-based runoff pollution.
-
-#Likewise, night light pollution and human impacts are both directly related
-#to population density.  Given night light pollution is a function of human
-#settlements, we can remove it and include only human impacts as representative.
-
-#Subset corr_vars to only those variables we want to remove 
-#(inorganic, pesticide & night light pollution)
-
-corr_remove <- corr_vars[c(1,3,5)]
-table_s2_2 <- dplyr::select(table_s2, -corr_remove)
-table_s3 <- table_s2_2[-c(6,7,9),]
-
-#Rename columns and rows for table_s2 and s3
-
-pressures_2 <- pressures[-c(6,7,9)]
-
-names(table_s2) <- pressures_2
-rownames(table_s2) <- pressures_2
-names(table_s3) <- pressures_2
-rownames(table_s3) <- pressures_2
-
-# Save collinearity tables S2 & s3
-
-objectname <- paste(currentDate,"_table_S2",".csv",sep="")
-write.csv(table_s2, file=paste(output_file_path,objectname, sep = "/" ))
-
-objectname <- paste(currentDate,"_table_S3",".csv",sep="")
-write.csv(table_s3, file=paste(output_file_path,objectname, sep = "/" ))
-
 ##Transform covariates##
 
 #log transformation
@@ -561,9 +490,66 @@ figure_s2
 
 dev.off()
 
+### Pearson's correlation test to check if any covariates are correlated
+
+table_s2 <- as.data.frame(cor(mpa_df[,9:26], method = "pearson"))
+
+names(table_s2) <- pressures
+rownames(table_s2) <- pressures
+
+objectname <- paste(currentDate,"_table_S2",".csv",sep="")
+write.csv(table_s2, file=paste(output_file_path,objectname, sep = "/" ))
+
+#Return combinations of variables that exceed the 
+#correlation threshold of 0.6 (conservative, see Dormann etal. 2013)
+
+threshold <- 0.6
+
+over.threshold.df <- data.frame()
+
+for (i in 1:nrow(table_s2)) {
+  
+  for (j in 1:ncol(table_s2)) {
+    
+    over.threshold.df[i,j] <- (table_s2[i,j] > threshold) & #Which pairs exceed threshold value
+    (colnames(table_s2[j]) != rownames(table_s2[i,])) #That aren't the same variable (i.e. fert * fert)
+    
+  }
+  
+}
+
+names(over.threshold.df) <- parameters #Add column names
+rownames(over.threshold.df) <- parameters #Add row names
+
+correlated <- which(over.threshold.df == TRUE,arr.ind = T) #Return matrix of variables that exhibit multicollinearity
+
+correlated #Look at which covariates are correlated
+
+#Correlated matrix shows following pairs exhibit correlation above the threshold:
+#Inorganic & Pesticide
+#Fertiliser & Pesticide
+#Fertiliser & Inorganic
+#Human impacts & Night light pollution
+#Commercial shipping and pollution
+
+#Inorganic, fertiliser and pesticide pollution distribution were all modeled
+#using the same methods and are highly correlated, therefore we can drop inorganic
+#and pesticide, and leave fertiliser with the assumption its distribution is
+#an adequate representation of all land-based runoff pollution.
+
+#Likewise, night light pollution and human impacts are both directly related
+#to population density.  Given night light pollution is a function of human
+#settlements, we can remove it and include only human impacts as representative.
+
+#Lastly, ocean pollution is modelled using the commercial shipping lanes as an input,
+#therefore we can remove ocean pollution and just keep shipping.
+
+
+
 ### SLOW CODE ### may take a minute or so
 
 #GLM for general model - all protected v unprotected only
+# Make sure to exclude pesticide, inorganic, night and ocean pollution covariates
 
 #using step AIC for best model
 
@@ -571,9 +557,9 @@ dev.off()
 mpa_glm_result<-glm(M~1,family=binomial,data=mpa_df)
 
 mpa_step_glm <- stepAIC(mpa_glm_result,scope = list(upper= ~acid_pressure_mean+art_pressure_mean+dd_pressure_mean+
-                                                      dndhbc_pressure_mean+dndlbc_pressure_mean+inorg_pressure_mean+
+                                                      dndhbc_pressure_mean+dndlbc_pressure_mean+fert_pressure_mean+
                                                       invas_pressure_mean+phbc_pressure_mean+plbc_pressure_mean+
-                                                      pop_pressure_mean+ship_pressure_mean+ #poll_pressure_mean+
+                                                      pop_pressure_mean+ship_pressure_mean+ 
                                                       slr_pressure_mean+sst_pressure_mean+
                                                       uv_pressure_mean,lower=~1))
 
@@ -597,9 +583,9 @@ for (i in 1:7){
   mpa.cat <- glm(M~1,family=binomial,data=temp)
   
   cat_mods[[i]] <- stepAIC(mpa.cat,scope = list(upper = ~acid_pressure_mean+art_pressure_mean+dd_pressure_mean+
-                                                  dndhbc_pressure_mean+dndlbc_pressure_mean+inorg_pressure_mean+
+                                                  dndhbc_pressure_mean+dndlbc_pressure_mean+fert_pressure_mean+
                                                   invas_pressure_mean+phbc_pressure_mean+plbc_pressure_mean+
-                                                  pop_pressure_mean+ship_pressure_mean+ #poll_pressure_mean+
+                                                  pop_pressure_mean+ship_pressure_mean+ 
                                                   slr_pressure_mean+sst_pressure_mean+
                                                   uv_pressure_mean,lower = ~1))
   
@@ -613,8 +599,6 @@ for (i in 1:7){
 #add all outputs into one list
 
 all_mods <- c(list(mpa_step_glm), cat_mods)
-
-lapply(all_mods, vif)
 
 #Save models as r data file if needed
 
