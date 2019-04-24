@@ -350,7 +350,7 @@ save(mpa_df, file=paste(output_file_path,objectname, sep = "/" ))
 
 ##IF STARTING FROM HERE, LOAD MPA DF
 
-load('2018_MPA_Input_files/5_processed_data/2019-04-23_scaled_by_eez_mpa_df.rda')
+#load('2018_MPA_Input_files/5_processed_data/2019-04-24_scaled_by_eez_mpa_df.rda')
 
 #libraries for stats, figures and tables
 
@@ -361,6 +361,62 @@ library(readr)
 library(viridis)
 library(dplyr)
 library(stringr)
+
+
+### Pearson's correlation test to check if any covariates are correlated
+
+table_s2 <- as.data.frame(cor(mpa_df[,9:26], method = "pearson"))
+
+names(table_s2) <- pressures
+rownames(table_s2) <- pressures
+
+objectname <- paste(currentDate,"_table_S2",".csv",sep="")
+write.csv(table_s2, file=paste(output_file_path,objectname, sep = "/" ))
+
+#Return combinations of variables that exceed the 
+#correlation threshold of 0.7 (see Dormann etal. 2013)
+
+threshold <- 0.7
+
+over.threshold.df <- data.frame()
+
+for (i in 1:nrow(table_s2)) {
+  
+  for (j in 1:ncol(table_s2)) {
+    
+    over.threshold.df[i,j] <- (table_s2[i,j] > threshold) & #Which pairs exceed threshold value
+      (colnames(table_s2[j]) != rownames(table_s2[i,])) #That aren't the same variable (i.e. fert * fert)
+    
+  }
+  
+}
+
+names(over.threshold.df) <- parameters #Add column names
+rownames(over.threshold.df) <- parameters #Add row names
+
+correlated <- which(over.threshold.df == TRUE,arr.ind = T) #Return matrix of variables that exhibit multicollinearity
+
+correlated #Look at which covariates are correlated
+
+#Correlated matrix shows following pairs exhibit correlation above the threshold:
+#Inorganic & Pesticide
+#Fertiliser & Pesticide
+#Fertiliser & Inorganic
+#Human impacts & Night light pollution
+#Commercial shipping and pollution
+
+#Inorganic, fertiliser and pesticide pollution distribution were all modeled
+#using the same methods and are highly correlated, therefore we can drop inorganic
+#and pesticide, and leave fertiliser with the assumption its distribution is
+#an adequate representation of all land-based runoff pollution.
+
+#Likewise, night light pollution and human impacts are both directly related
+#to population density.  Given night light pollution is a function of human
+#settlements, we can remove it and include only human impacts as representative.
+
+#Lastly, ocean pollution is modelled using the commercial shipping lanes as an input,
+#therefore we can remove ocean pollution and just keep shipping.
+
 
 ### Create dataframe which identifies which pressures are manageable & updates parameter codes
 
@@ -489,62 +545,6 @@ figure_s2
 #turn off device
 
 dev.off()
-
-### Pearson's correlation test to check if any covariates are correlated
-
-table_s2 <- as.data.frame(cor(mpa_df[,9:26], method = "pearson"))
-
-names(table_s2) <- pressures
-rownames(table_s2) <- pressures
-
-objectname <- paste(currentDate,"_table_S2",".csv",sep="")
-write.csv(table_s2, file=paste(output_file_path,objectname, sep = "/" ))
-
-#Return combinations of variables that exceed the 
-#correlation threshold of 0.6 (conservative, see Dormann etal. 2013)
-
-threshold <- 0.6
-
-over.threshold.df <- data.frame()
-
-for (i in 1:nrow(table_s2)) {
-  
-  for (j in 1:ncol(table_s2)) {
-    
-    over.threshold.df[i,j] <- (table_s2[i,j] > threshold) & #Which pairs exceed threshold value
-    (colnames(table_s2[j]) != rownames(table_s2[i,])) #That aren't the same variable (i.e. fert * fert)
-    
-  }
-  
-}
-
-names(over.threshold.df) <- parameters #Add column names
-rownames(over.threshold.df) <- parameters #Add row names
-
-correlated <- which(over.threshold.df == TRUE,arr.ind = T) #Return matrix of variables that exhibit multicollinearity
-
-correlated #Look at which covariates are correlated
-
-#Correlated matrix shows following pairs exhibit correlation above the threshold:
-#Inorganic & Pesticide
-#Fertiliser & Pesticide
-#Fertiliser & Inorganic
-#Human impacts & Night light pollution
-#Commercial shipping and pollution
-
-#Inorganic, fertiliser and pesticide pollution distribution were all modeled
-#using the same methods and are highly correlated, therefore we can drop inorganic
-#and pesticide, and leave fertiliser with the assumption its distribution is
-#an adequate representation of all land-based runoff pollution.
-
-#Likewise, night light pollution and human impacts are both directly related
-#to population density.  Given night light pollution is a function of human
-#settlements, we can remove it and include only human impacts as representative.
-
-#Lastly, ocean pollution is modelled using the commercial shipping lanes as an input,
-#therefore we can remove ocean pollution and just keep shipping.
-
-
 
 ### SLOW CODE ### may take a minute or so
 
