@@ -863,7 +863,7 @@ drop_parameters <- function(data, mod_name, drop) {
   
   num_doubled <- (number * 2 )-1
  
-  if(drop <= number){
+  if(drop <= number) {
     
   remove <- (num_doubled - num_sequence[[drop]])
   
@@ -877,14 +877,18 @@ drop_parameters <- function(data, mod_name, drop) {
   
   Model
  
-  } else {
+  } else if (drop == (number+1)) {
   
+  Model <- paste(mod_pt1, 1, collapse = " ")
+  Model
+  
+  } else {
+    
   Model <- NA
   Model
-
-  }
-  
+  } 
 }
+
 
 #Nested loop - creates list of top ten candidate model formulas for each of the 8 models 
 #(output is a list of 8 character vectors, each containing 10 model formulas)
@@ -912,7 +916,6 @@ for (j in 1:8) {
   
 }
 
-all_formulas
 
 
 #Subset the original base tables created so they only contain top ten models and relevant variables.  Output should be a list of 8 smaller tables.
@@ -955,6 +958,7 @@ for (j in 1:8) {
   for (i in 1:10) {
     
     delta.list[[i]] <- calculate_deltaAIC(data, dropindex[[i]])
+    delta.list[[i]] <- delta.list[[i]][!is.na(delta.list[[i]])]
     
   }
   
@@ -974,11 +978,14 @@ all.tables.list <- list()
 
 for (i in 1:8){
   
-  all.tables.list[[i]] <- cbind(all_formulas[[i]],Model_id,subset_table_list[[i]],all.deltas.list[[i]])
+  Model_id <- seq(1, length(all_formulas[[i]]))
   
-  names(all.tables.list[[i]]) <- c("Candidate model", "Model id","No. of parameters", "AIC", "Log likelihood", "Delta AIC")
+  all.tables.list[[i]] <- cbind(Model_id, all_formulas[[i]],subset_table_list[[i]],all.deltas.list[[i]])
+  
+  names(all.tables.list[[i]]) <- c("Model_id","Candidate model", "No. of parameters", "AIC", "Log likelihood", "Delta AIC")
   
 }
+
 
 #Name tables
 
