@@ -844,24 +844,27 @@ for (i in 1:length(all_mods)){
 
 names(table_list) <- short_mod_names
 
-#function to create formulas for top ten candidate models for each model category - input data is tables from previous function.
+#function to create formulas for top ten candidate models for each model category 
+#argument data is tables from previous function.
 
 drop_parameters <- function(data, mod_name, drop) {
   
   mod_pt1 <- paste(mod_name, "~" )
-  
+ 
   final_mod <- paste(data$Step, collapse = " ")
-  
+ 
   final_mod <- str_replace_all(final_mod, "_pressure_mean","")
-  
+ 
   final_mod <- substring(final_mod, 4)
-  
+ 
   number <- (str_count(final_mod, boundary("word")))
-  
+ 
   num_sequence <- seq(from = 0, to = (number*2), by = 2)
   
   num_doubled <- (number * 2 )-1
-  
+ 
+  if(drop <= number){
+    
   remove <- (num_doubled - num_sequence[[drop]])
   
   next_mod <- word(final_mod, 1:remove)
@@ -870,21 +873,28 @@ drop_parameters <- function(data, mod_name, drop) {
   
   Model <- paste(mod_pt1, mod_pt2, collapse = " ")
   
+  Model <- str_replace_all(Model, " - "," + ")
+  
   Model
+ 
+  } else {
+  
+  Model <- NA
+  Model
+
+  }
   
 }
 
 #Nested loop - creates list of top ten candidate model formulas for each of the 8 models 
 #(output is a list of 8 character vectors, each containing 10 model formulas)
 
-#Create index for loop
 
-dropindex <- c(1:10)
-
+dropindex <- c(1:10) #Because we want to show top ten best models fitted 
+#can change (eg c(1:5)) if you only want top 5 or top 15 etc.
 
 category_formulas <- list()
 all_formulas<- list()
-
 
 for (j in 1:8) {
   
@@ -894,11 +904,16 @@ for (j in 1:8) {
     
     category_formulas[[i]] <- unlist(drop_parameters(data, short_mod_names[[j]], dropindex[[i]]), use.names = FALSE)
     
+    category_formulas[[i]] <- category_formulas[[i]][!is.na(category_formulas[[i]])]
+    
   }
   
   all_formulas[[j]] <- unlist(category_formulas, use.names = FALSE)
   
 }
+
+all_formulas
+
 
 #Subset the original base tables created so they only contain top ten models and relevant variables.  Output should be a list of 8 smaller tables.
 
