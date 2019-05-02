@@ -121,16 +121,15 @@ for (j in 1:9) {
   
 }
 
-
-objectname <- paste(currentDate,"_parent_area_list",".rda",sep="")
-save(parent_area_list, file=paste(output_file_path,objectname, sep = "/" ))
-
 #name elements of the area list according to their area 
 
 area_names<-c("ia", "ib", "ii", "iii","iv", "v", "vi","unprotected","eez")
 
 names(parent_area_list) <- area_names
 
+#Save list
+objectname <- paste(currentDate,"_parent_area_list",".rda",sep="")
+save(parent_area_list, file=paste(output_file_path,objectname, sep = "/" ))
 
 ## STEP 2 - ATTACH ATTRIBUTES, AGGREGATE, CLEAN AND SCALE DATA
 
@@ -343,8 +342,8 @@ mpa_df <- mpa_df[!no.inf,]
 
 # Save final scaled dataframe
 
-objectname <- paste(currentDate,"_scaled_by_eez_mpa_df",".rda",sep="")
-save(mpa_df, file=paste(output_file_path,objectname, sep = "/" ))
+objectname <- paste(currentDate,"_scaled_by_eez_mpa_df",".csv",sep="")
+write.csv(mpa_df, file = objectname)
 
 ## STEP 3 - STATISTICS, TABLES AND FIGURES
 
@@ -366,6 +365,9 @@ library(stringr)
 ### Pearson's correlation test to check if any covariates are correlated
 
 table_s2 <- as.data.frame(cor(mpa_df[,9:26], method = "pearson"))
+
+table_s2 <- table_s2 %>% 
+      mutate_if(is.numeric, round, digits = 3)
 
 names(table_s2) <- pressures
 rownames(table_s2) <- pressures
@@ -391,6 +393,8 @@ for (i in 1:nrow(table_s2)) {
   
 }
 
+parameters <- colnames(mpa_df[,9:26])
+
 names(over.threshold.df) <- parameters #Add column names
 rownames(over.threshold.df) <- parameters #Add row names
 
@@ -403,7 +407,7 @@ correlated #Look at which covariates are correlated
 #Fertiliser & Pesticide
 #Fertiliser & Inorganic
 #Human impacts & Night light pollution
-#Commercial shipping and pollution
+
 
 #Inorganic, fertiliser and pesticide pollution distribution were all modeled
 #using the same methods and are highly correlated, therefore we can drop inorganic
@@ -413,9 +417,6 @@ correlated #Look at which covariates are correlated
 #Likewise, night light pollution and human impacts are both directly related
 #to population density.  Given night light pollution is a function of human
 #settlements, we can remove it and include only human impacts as representative.
-
-#Lastly, ocean pollution is modelled using the commercial shipping lanes as an input,
-#therefore we can remove ocean pollution and just keep shipping.
 
 
 ### Create dataframe which identifies which pressures are manageable & updates parameter codes
@@ -427,8 +428,6 @@ manageable <- c("Not-manageable", "Manageable", "Manageable",
                 "Manageable", "Manageable", 
                 "Not-manageable", "Not-manageable", "Manageable", "Not-manageable",
                 "Not-manageable", "Not-manageable")
-
-parameters <- colnames(mpa_df[,9:26])
 
 pressure_df <- cbind(pressures, manageable, parameters)
 
@@ -496,8 +495,8 @@ mpa_df[,c(9:26)] <- apply((mpa_df[,c(9:26)]), 2,"*", 10)
 
 #Save transformed df if needed
 
-objectname <- paste(currentDate,"_mpa_df_transformed",".rda",sep="")
-write.csv(mpa_df, file=paste(output_file_path,objectname, sep = "/" ))
+objectname <- paste(currentDate,"_mpa_df_transformed",".csv",sep="")
+write.csv(mpa_df, file = objectname)
 
 
 #Create new boxplots comparing transformed protected and unprotected data
@@ -559,7 +558,7 @@ mpa_glm_result<-glm(M~1,family=binomial,data=mpa_df)
 mpa_step_glm <- stepAIC(mpa_glm_result,scope = list(upper= ~acid_pressure_mean+art_pressure_mean+dd_pressure_mean+
                                                       dndhbc_pressure_mean+dndlbc_pressure_mean+fert_pressure_mean+
                                                       invas_pressure_mean+phbc_pressure_mean+plbc_pressure_mean+
-                                                      pop_pressure_mean+ship_pressure_mean+ 
+                                                      poll_pressure_mean+pop_pressure_mean+ship_pressure_mean+
                                                       slr_pressure_mean+sst_pressure_mean+
                                                       uv_pressure_mean,lower=~1))
 
@@ -585,7 +584,7 @@ for (i in 1:7){
   cat_mods[[i]] <- stepAIC(mpa.cat,scope = list(upper = ~acid_pressure_mean+art_pressure_mean+dd_pressure_mean+
                                                   dndhbc_pressure_mean+dndlbc_pressure_mean+fert_pressure_mean+
                                                   invas_pressure_mean+phbc_pressure_mean+plbc_pressure_mean+
-                                                  pop_pressure_mean+ship_pressure_mean+ 
+                                                  poll_pressure_mean+pop_pressure_mean+ship_pressure_mean+
                                                   slr_pressure_mean+sst_pressure_mean+
                                                   uv_pressure_mean,lower = ~1))
   
@@ -602,14 +601,18 @@ all_mods <- c(list(mpa_step_glm), cat_mods)
 
 #Save models as r data file if needed
 
+
+mod_names <- c("All levels model", "Level Ia model", "Level Ib model",
+               "Level II model", "Level III model", "Level IV model", "Level V model",
+               "Level VI model")
+
+names(all_mods) <- mod_names
+
 objectname <- paste(currentDate,"_all_models",".rda",sep="")
 save(all_mods, file=paste(output_file_path,objectname, sep = "/" ))
 
-mod_names <- c("General protection model", "Level Ia model", "Level Ib model",
-                     "Level II model", "Level III model", "Level IV model", "Level V model",
-                     "Level VI model")
 
-## To create Table 1
+## To create Table 2
 
 #extract parameters, coefficients and stats into a dataframe 
 
@@ -638,8 +641,15 @@ for (i in seq(along = all_mods)) {
   
   coefficient_list[[i]] <- extract_coefficients(all_mods[[i]],mod_names[[i]])
 
-  }
+}
 
+
+
+names(coefficient_list) <- mod_names
+coefficient_df <- ldply(coefficient_list,rbind)
+
+objectname <- paste(currentDate,"_coefficients",".csv",sep="")
+write.csv(coefficient_df, file=paste(output_file_path,objectname, sep = "/" ))
 
 # extract formulas etc. for each best model and store in table 1
 
@@ -678,29 +688,29 @@ for (i in seq(along = all_mods)) {
   
 }
 
-table_1_list <- list()
+table_2_list <- list()
 
 
 for (i in seq(along = all_mods)) {
   
-    table_1_list[[i]] <- extract_table_1_vals(all_mods[[i]],coefficient_list[[i]])
+    table_2_list[[i]] <- extract_table_1_vals(all_mods[[i]],coefficient_list[[i]])
     
 }
 
-table_1 <- as.data.frame(do.call(cbind,table_1_list))
+table_2 <- as.data.frame(do.call(cbind,table_2_list))
 
-table_1 <- as.data.frame(sapply(table_1, unlist))
+table_2 <- as.data.frame(sapply(table_2, unlist))
 
-rownames(table_1)<- c("Model","Formula", "Intercept", "Intercept_p_value", "AIC", "R_squared", "n")
+rownames(table_2) <- c("Model","Formula", "Intercept", "Intercept_p_value", "AIC", "R_squared", "n")
 
-table_1 <- as.data.frame(t(table_1))
+table_2 <- as.data.frame(t(table_2))
 
-rownames(table_1) <- c()
+rownames(table_2) <- c()
 
 #Save Table 1
 
-objectname <- paste(currentDate,"_table_1",".csv",sep="")
-write.csv(table_1, file=paste(output_file_path,objectname, sep = "/" ))
+objectname <- paste(currentDate,"_table_2",".csv",sep="")
+write.csv(table_2, file=paste(output_file_path,objectname, sep = "/" ))
 
 ##To create dataframe for Figure 1
 
@@ -735,7 +745,7 @@ figure_1_df$shape_code <- as.factor(figure_1_df$shape_code)
 figure_1_df <- mutate(figure_1_df, 
                colour = ifelse(significant == TRUE,
                                ifelse(manageable == TRUE,"#253494","#41B6C4"),
-                               "#737373"))
+                               "#737373")) 
 
 figure_1_df <- mutate(figure_1_df, 
                       legend = ifelse(significant == TRUE,
@@ -787,7 +797,7 @@ figure_1 <- qplot(data = figure_1_df, x = reorder(pressures, Estimate), y = Esti
 figure_1 <- figure_1 + facet_wrap(~ category, nrow = 2, scales = "free_x") + 
             coord_flip() + geom_point(aes(x = pressures, y = Estimate,                                                                                           
             shape = manageable, colour = colour, fill = colour), size = 1) + 
-            scale_shape_manual(values = c(16,0))+
+            scale_shape_manual(values = c(16,1))+
             scale_colour_manual(values=c("#253494","#41B6C4", "#737373")) +
             scale_fill_manual(values=c("#41B6C4","#253494","#737373")) +
             theme(strip.text.x = element_text(size = 11), 
@@ -814,7 +824,7 @@ short_mod_names <- c("MPA_all", "MPA_ia", "MPA_ib", "MPA_ii", "MPA_iii", "MPA_iv
 
 #Function creates a base table from model output
 
-make_table <-function(model) {
+make_table <- function(model) {
   
   model <- model
   
