@@ -1,5 +1,5 @@
 
-# Using R version 3.3.2
+# Using R version 3.5.2
 
 #####################
 
@@ -10,11 +10,10 @@
 # STEP 1 - CALCULATE PRESSURE VALUES FOR DIFFERENT AREAS (MPAs, UNPROTECTED AND EEZs)
 
 #Load libraries
-
+# 
 library(plyr)
-library(dplyr)
-library(readr)
 library(data.table)
+library(tidyverse)
 library(raster)
 library(rgdal)
 library(ff)
@@ -23,7 +22,7 @@ library(magrittr)
 
 #set working directory
 
-basedir <- "#Your working directory filepath here"
+basedir <- "C:/Users/ssteven/Dropbox/Papers/MPA paper"
 
 setwd(basedir)
 
@@ -71,7 +70,7 @@ pressure_names<-c("acid", "art", "dd", "dndhbc", "dndlbc", "fert",
 
 #Extract_vals function calculates pressure statistics for specified area file (e.g. ia, ib etc)
 
-extract_vals<-function(x) {
+extract_vals <- function(x) {
   
   eez_id <- ff(vmode='short',getValues(areas), length = ncell(areas))
   wh <- ffwhich(eez_id, !is.na(eez_id)) %>% as.ram
@@ -81,7 +80,7 @@ extract_vals<-function(x) {
   pressure_vals <- ff(vmode = "double", getValues(pressure), length =  ncell(pressure))
   pressure_area <- data.table(completed,pressure_vals=pressure_vals[wh])
   
-  out<- ddply(pressure_area,'id',summarise,
+  out <- ddply(pressure_area,'id',summarise,
               pressure_mean=mean(pressure_vals,na.rm=TRUE),
               pressure_max=max(pressure_vals,na.rm=TRUE),
               pressure_min=min(pressure_vals,na.rm=TRUE),
@@ -138,7 +137,7 @@ save(parent_area_list, file=paste(output_file_path,objectname, sep = "/" ))
 
 #NOTE - if you don't have enough computing power to complete the above steps, can begin here by loading the parent area list .rda file
 
-load('2018_MPA_Input_files/5_processed_data/2018-08-17_parent_area_list.rda')
+#load('2018_MPA_Input_files/5_processed_data/2018-08-17_parent_area_list.rda')
 
 #read in raw attribute table pulled from shapefile in ArcGIS (make sure you have saved files in 3_area_attribute_tables as downloaded)
 
@@ -164,7 +163,7 @@ unprotected_attributes_clean$category[unprotected_attributes_clean$category == "
 
 ##FOR MPA FILES (can disregard warnings about column classes)
 
-mpa_attributes_list<- directory_files('2018_MPA_Input_files/4_mpa_attribute_tables')
+mpa_attributes_list <- directory_files('2018_MPA_Input_files/4_mpa_attribute_tables')
 
 # Subset the raw attribute tables and rename the columns, save as a new list
 
@@ -304,8 +303,8 @@ area_means_matched <-mutate(area_means_matched,M=ifelse(grepl("unprotected",cate
 
 pressures <- c("Ocean acidification", "Artisanal fishing", "Destructive demersal fishing", 
                "High bycatch demersal fishing", "Low bycatch demersal fishing", "Fertiliser pollution",
-               "Inorganic pollution", "Invasive species", "Night light pollution", "Pesticide pollution",           "High bycatch pelagic fishing", "Low bycatch pelagic fishing", 
-               "Ocean pollution (ships and ports)", "Human impacts", "Commercial Shipping", "Sea level rise",      "Sea surface temperature anomalies", "Ultraviolet radiation anomalies")
+               "Inorganic pollution", "Invasive species ship introductions", "Night light pollution", "Pesticide pollution", "High bycatch pelagic fishing", "Low bycatch pelagic fishing", 
+               "Ocean pollution (ships and ports)", "Human density impacts", "Commercial Shipping", "Sea level rise",      "Sea surface temperature anomalies", "Ultraviolet radiation anomalies")
 
 
 # scale area values by their parent EEZ values - takes around 14 seconds
@@ -369,10 +368,20 @@ table_s2 <- as.data.frame(cor(mpa_df[,9:26], method = "pearson"))
 table_s2 <- table_s2 %>% 
       mutate_if(is.numeric, round, digits = 3)
 
-names(table_s2) <- pressures
-rownames(table_s2) <- pressures
+# Create key for naming pressures 
+
+pressure_key <- c("OA","AF","DD", "HD","LD","FP", "IP","IS","NP","PP","HP","LP","OP","HI",
+         "CS","SL","SS","UV")
+
+table_s2_key <- cbind(pressures, pressure_key)
+
+names(table_s2) <- pressure_key
+rownames(table_s2) <- pressure_key
 
 objectname <- paste(currentDate,"_table_S2",".csv",sep="")
+write.csv(table_s2, file=paste(output_file_path,objectname, sep = "/" ))
+
+objectname <- paste(currentDate,"_table_S2_key",".csv",sep="")
 write.csv(table_s2, file=paste(output_file_path,objectname, sep = "/" ))
 
 #Return combinations of variables that exceed the 
@@ -461,7 +470,7 @@ figure_s1 <- ggplot(raw_melted_boxplot_df, aes (x = pressures, y = value),  ylim
                    panel.grid.minor = element_blank(),
                    panel.background = element_rect(fill = "grey97"),
                    axis.line = element_line(colour = "black"),
-                   axis.text.x=element_text(angle=90,hjust=1))+
+                   axis.text.x=element_text(angle= 45,hjust=1))+
                    geom_hline(yintercept = 0, colour = "red") +
                    ylim(-20,20)
 
@@ -529,7 +538,7 @@ figure_s2 <- ggplot(transformed_melted_boxplot_df, aes (x = pressures, y = value
                    panel.grid.minor = element_blank(),
                    panel.background = element_rect(fill = "grey97"),
                    axis.line = element_line(colour = "black"),
-                   axis.text.x=element_text(angle=90,hjust=1))+
+                   axis.text.x=element_text(angle= 45,hjust=1))+
                    geom_hline(yintercept = 0, colour = "red") +
                    ylim(-20,20)
 
@@ -547,20 +556,20 @@ dev.off()
 
 ### SLOW CODE ### may take a minute or so
 
-#GLM for general model - all protected v unprotected only
+# GLM for general model - all protected v unprotected only
 # Make sure to exclude pesticide, inorganic, night and ocean pollution covariates
 
 #using step AIC for best model
 
 
-mpa_glm_result<-glm(M~1,family=binomial,data=mpa_df)
+mpa_glm_result <- glm(M~1,family=binomial,data=mpa_df)
 
 mpa_step_glm <- stepAIC(mpa_glm_result,scope = list(upper= ~acid_pressure_mean+art_pressure_mean+dd_pressure_mean+
                                                       dndhbc_pressure_mean+dndlbc_pressure_mean+fert_pressure_mean+
                                                       invas_pressure_mean+phbc_pressure_mean+plbc_pressure_mean+
                                                       poll_pressure_mean+pop_pressure_mean+ship_pressure_mean+
                                                       slr_pressure_mean+sst_pressure_mean+
-                                                      uv_pressure_mean,lower=~1))
+                                                      uv_pressure_mean,lower= ~1))
 
 
 #######
@@ -602,9 +611,9 @@ all_mods <- c(list(mpa_step_glm), cat_mods)
 #Save models as r data file if needed
 
 
-mod_names <- c("All levels model", "Level Ia model", "Level Ib model",
-               "Level II model", "Level III model", "Level IV model", "Level V model",
-               "Level VI model")
+mod_names <- c("All categories model", "Category Ia model", "Category Ib model",
+               "Category II model", "Category III model", "Category IV model", "Category V model",
+               "Category VI model")
 
 names(all_mods) <- mod_names
 
@@ -744,7 +753,7 @@ figure_1_df$shape_code <- as.factor(figure_1_df$shape_code)
 
 figure_1_df <- mutate(figure_1_df, 
                colour = ifelse(significant == TRUE,
-                               ifelse(manageable == TRUE,"#253494","#41B6C4"),
+                               ifelse(manageable == TRUE,"#41B6C4","#253494"),
                                "#737373")) 
 
 figure_1_df <- mutate(figure_1_df, 
@@ -837,6 +846,8 @@ make_table <- function(model) {
   df <- cbind(df,k)
   
   df <- mutate(df, Log_likelihood = k - (df$AIC/2))
+  
+  df <- df[!grepl("-", df$Step),]
   
 }
 
