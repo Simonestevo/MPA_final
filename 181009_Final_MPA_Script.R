@@ -47,6 +47,14 @@ directory_files<-function(directory){
   
 }
 
+#### IMPORTANT - if you don't have enough computing power to process the raw
+## pressure file loop, can begin here by loading the parent area list .rda file.
+## BUT - if you want to start from the very beginning, don't load the file
+## below
+
+load('2018_MPA_Input_files/5_processed_data/2018-08-17_parent_area_list.rda')
+
+
 #load processed area and pressure files - save files in folders names (1_area_rasters/ & 2_pressure_rasters) as below in the working directory
 
 area_files <- list.files(path='2018_MPA_Input_files/1_area_rasters/', 
@@ -102,6 +110,12 @@ extract_vals <- function(x) {
 #Loop to calculate pressure statistics for all 19 pressures in each of the 9 areas using extract_vals function.  
 #Output should be parent list of 9 objects, where each object in the parent list is a child list of 19 dataframes
 
+# Note the script will only perform this step if you haven't already
+# loaded "parent_area_list.rds"
+
+
+if ( !exists( "parent_area_list") )  {
+
 parent_area_list <- list()
 
 area_pressure_list <- list()
@@ -126,6 +140,12 @@ area_names<-c("ia", "ib", "ii", "iii","iv", "v", "vi","unprotected","eez")
 
 names(parent_area_list) <- area_names
 
+} else {
+  
+  print("You have already loaded a pre-processed parent_area_list file")
+  
+}
+
 #Save list
 objectname <- paste(currentDate,"_parent_area_list",".rda",sep="")
 save(parent_area_list, file=paste(output_file_path,objectname, sep = "/" ))
@@ -135,9 +155,6 @@ save(parent_area_list, file=paste(output_file_path,objectname, sep = "/" ))
 ##Prepare attribute tables for areas to merge with the value dataframes 
 # - need to do EEZ, Unprotected and MPA attributes separately
 
-#NOTE - if you don't have enough computing power to complete the above steps, can begin here by loading the parent area list .rda file
-
-#load('2018_MPA_Input_files/5_processed_data/2018-08-17_parent_area_list.rda')
 
 #read in raw attribute table pulled from shapefile in ArcGIS (make sure you have saved files in 3_area_attribute_tables as downloaded)
 
@@ -662,7 +679,7 @@ write.csv(coefficient_df, file=paste(output_file_path,objectname, sep = "/" ))
 
 # extract formulas etc. for each best model and store in table 1
 
-  extract_table_1_vals <- function (model, coefficients) {
+  extract_table_1_vals <- function(model, coefficients) {
   
   out <- list()
     
@@ -672,7 +689,7 @@ write.csv(coefficient_df, file=paste(output_file_path,objectname, sep = "/" ))
     
   f <- model$formula
 
-  formula_name <- paste(f[2],f[3],sep='~')
+  formula_name <- paste(f[2],f[3],sep = '~')
   
   model_summary <- summary(model)
   
@@ -866,13 +883,26 @@ for (i in 1:length(all_mods)){
 names(table_list) <- short_mod_names
 
 #function to create formulas for top ten candidate models for each model category 
-#argument data is tables from previous function.
+#parameter "data" is tables created by from previous function.
+
+##TODO: Remove the code below where I've assigned objects to arguments to test 
+## the function (eg mod_name <- "cat ib')
+
+##TODO: I think to fix this function, it needs to take the bottom ten not the top
+# ten 
+
+mod_name <- "Category Ib model"
+data <- table_list[[3]]
+drop <- 1
 
 drop_parameters <- function(data, mod_name, drop) {
   
   mod_pt1 <- paste(mod_name, "~" )
  
-  final_mod <- paste(data$Step, collapse = " ")
+  start <- length(data$Step) - 11
+  end <- length(data$Step)
+  
+  final_mod <- paste(data$Step[start:end], collapse = " ")
  
   final_mod <- str_replace_all(final_mod, "_pressure_mean","")
  
