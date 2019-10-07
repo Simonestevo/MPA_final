@@ -916,28 +916,24 @@ names(table_list) <- short_mod_names
 # ten 
 
 mod_name <- "Category iii model"
-model <- all_mods[[3]]
-data <- table_list[[3]]
+model <- all_mods[[5]]
+data <- table_list[[5]]
 drop <- 1
 
 drop_parameters <- function(data, model, mod_name, drop) {
   
   mod_pt1 <- paste(mod_name, "~" )
  
-  final_mod <- paste(data$Step, collapse = " ")
- 
   # Get best model formula
   final_mod <- model$formula
   
   # Remove excess words
-  
   final_mod <- str_replace_all(final_mod, "_pressure_mean","")
   
-  # Remove formula and tilde
- 
-  #final_mod <- substring(final_mod, 4)
-  
+  # Remove M and tilde
   final_mod <- final_mod[3]
+  
+  # Get number of covariates included in final model
  
   number <- (str_count(final_mod, boundary("word")))
  
@@ -959,11 +955,6 @@ drop_parameters <- function(data, model, mod_name, drop) {
   
   Model
  
-  } else if (drop == (number+1)) {
-  
-  Model <- paste(mod_pt1, 1, collapse = " ")
-  Model
-  
   } else {
     
   Model <- NA
@@ -1059,8 +1050,6 @@ Model_id <- c(1:10)
 all.tables.list <- list()
 
 for (i in 1:8) {
-  
-  i <- 1
   
   Model_id <- seq(1, length(all_formulas[[i]]))
   
