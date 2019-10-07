@@ -136,7 +136,7 @@ for (j in 1:9) {
 
 #name elements of the area list according to their area 
 
-area_names<-c("ia", "ib", "ii", "iii","iv", "v", "vi","unprotected","eez")
+area_names <- c("ia", "ib", "ii", "iii","iv", "v", "vi","unprotected","eez")
 
 names(parent_area_list) <- area_names
 
@@ -769,9 +769,9 @@ figure_1_df <- mutate(figure_1_df,shape_code=ifelse(manageable == TRUE,1,6))
 figure_1_df$shape_code <- as.factor(figure_1_df$shape_code)
 
 figure_1_df <- mutate(figure_1_df, 
-               colour = ifelse(significant == TRUE,
-                               ifelse(manageable == TRUE,"#41B6C4","#253494"),
-                               "#737373")) 
+                      colour = ifelse(significant == TRUE,
+                                      ifelse(manageable == TRUE,"#41B6C4","#253494"),
+                                      "#737373")) 
 
 figure_1_df <- mutate(figure_1_df, 
                       legend = ifelse(significant == TRUE,
@@ -852,13 +852,37 @@ short_mod_names <- c("MPA_all", "MPA_ia", "MPA_ib", "MPA_ii", "MPA_iii", "MPA_iv
 
 make_table <- function(model) {
   
-  model <- model
-  
   df <- model$anova
+
+  # Get list of parameters included in final model
+  formula <- as.character(model$formula)[[3]]
+  x <- flatten(strsplit(formula, "+ "))
+  x <- unlist(x, use.names=FALSE)
+  y <- x == "+"
+  z <- x[!y]
+  final_parameters <- paste("+", z)
+ 
+  # Get list of parameters tested during model selection
+  steps <- as.character(df$Step)
   
-  length <- length(df$Step)
+  # Make an index to subset the anova dataframe
   
-  k <- sort(seq(from = length, to = 1, by = - 1))
+  subset_df_index <- steps %in% final_parameters
+
+  
+  # length <- (str_count(model$formula, boundary("word")))
+  # 
+  # length <- length[3]
+  # 
+  # df <- df[(nrow(df)-length):nrow(df),]
+  
+  df <- df[subset_df_index,]
+  
+  length <- nrow(df)
+  
+  k <- sort(seq(from = length, to = 1, by = -1))
+  
+  k <- k + 1
   
   df <- cbind(df,k)
   
@@ -891,22 +915,29 @@ names(table_list) <- short_mod_names
 ##TODO: I think to fix this function, it needs to take the bottom ten not the top
 # ten 
 
-mod_name <- "Category Ib model"
+mod_name <- "Category iii model"
+model <- all_mods[[3]]
 data <- table_list[[3]]
 drop <- 1
 
-drop_parameters <- function(data, mod_name, drop) {
+drop_parameters <- function(data, model, mod_name, drop) {
   
   mod_pt1 <- paste(mod_name, "~" )
  
-  start <- length(data$Step) - 11
-  end <- length(data$Step)
+  final_mod <- paste(data$Step, collapse = " ")
+ 
+  # Get best model formula
+  final_mod <- model$formula
   
-  final_mod <- paste(data$Step[start:end], collapse = " ")
- 
+  # Remove excess words
+  
   final_mod <- str_replace_all(final_mod, "_pressure_mean","")
+  
+  # Remove formula and tilde
  
-  final_mod <- substring(final_mod, 4)
+  #final_mod <- substring(final_mod, 4)
+  
+  final_mod <- final_mod[3]
  
   number <- (str_count(final_mod, boundary("word")))
  
@@ -957,7 +988,7 @@ for (j in 1:8) {
   
   for (i in 1:10) {
     
-    category_formulas[[i]] <- unlist(drop_parameters(data, short_mod_names[[j]], dropindex[[i]]), use.names = FALSE)
+    category_formulas[[i]] <- unlist(drop_parameters(data, all_mods[[j]],short_mod_names[[j]], dropindex[[i]]), use.names = FALSE)
     
     category_formulas[[i]] <- category_formulas[[i]][!is.na(category_formulas[[i]])]
     
@@ -1027,7 +1058,9 @@ Model_id <- c(1:10)
 
 all.tables.list <- list()
 
-for (i in 1:8){
+for (i in 1:8) {
+  
+  i <- 1
   
   Model_id <- seq(1, length(all_formulas[[i]]))
   
