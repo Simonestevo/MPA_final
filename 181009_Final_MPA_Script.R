@@ -399,7 +399,7 @@ objectname <- paste(currentDate,"_table_S2",".csv",sep="")
 write.csv(table_s2, file=paste(output_file_path,objectname, sep = "/" ))
 
 objectname <- paste(currentDate,"_table_S2_key",".csv",sep="")
-write.csv(table_s2, file=paste(output_file_path,objectname, sep = "/" ))
+write.csv(table_s2_key, file=paste(output_file_path,objectname, sep = "/" ))
 
 #Return combinations of variables that exceed the 
 #correlation threshold of 0.7 (see Dormann etal. 2013)
