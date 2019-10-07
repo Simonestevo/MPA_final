@@ -22,7 +22,7 @@ library(magrittr)
 
 #set working directory
 
-basedir <- "C:/Users/ssteven/Dropbox/Papers/MPA paper"
+basedir <- "C:/Users/ssteven/Dropbox/Papers/MPA_paper/MPA_final"
 
 setwd(basedir)
 
@@ -55,6 +55,17 @@ directory_files<-function(directory){
 load('2018_MPA_Input_files/5_processed_data/2018-08-17_parent_area_list.rda')
 
 
+# names for pressure dataframes
+
+pressure_names<-c("acid", "art", "dd", "dndhbc", "dndlbc", "fert", 
+                  "inorg", "invas", "night", "oil", "pest", "phbc",
+                  "plbc", "poll", "pop", "ship", "slr", "sst", "uv")
+
+
+# Note the script will only perform this step if you haven't already
+# loaded "parent_area_list.rds"
+
+if ( !exists( "parent_area_list") )  {
 #load processed area and pressure files - save files in folders names (1_area_rasters/ & 2_pressure_rasters) as below in the working directory
 
 area_files <- list.files(path='2018_MPA_Input_files/1_area_rasters/', 
@@ -68,12 +79,6 @@ pressure_files <- list.files(path='2018_MPA_Input_files/2_pressure_rasters/',
 
 pressure_list<-lapply(pressure_files,raster)
 
-
-# names for pressure dataframes
-
-pressure_names<-c("acid", "art", "dd", "dndhbc", "dndlbc", "fert", 
-                  "inorg", "invas", "night", "oil", "pest", "phbc",
-                  "plbc", "poll", "pop", "ship", "slr", "sst", "uv")
 
 
 #Extract_vals function calculates pressure statistics for specified area file (e.g. ia, ib etc)
@@ -109,12 +114,6 @@ extract_vals <- function(x) {
 
 #Loop to calculate pressure statistics for all 19 pressures in each of the 9 areas using extract_vals function.  
 #Output should be parent list of 9 objects, where each object in the parent list is a child list of 19 dataframes
-
-# Note the script will only perform this step if you haven't already
-# loaded "parent_area_list.rds"
-
-
-if ( !exists( "parent_area_list") )  {
 
 parent_area_list <- list()
 
@@ -764,14 +763,24 @@ figure_1_df <- mutate(figure_1_df, manageable = ifelse (manageable == "Manageabl
 
 figure_1_df <- arrange(figure_1_df, category, Z_value, manageable)
 
-figure_1_df <- mutate(figure_1_df,shape_code=ifelse(manageable == TRUE,1,6))
+#figure_1_df <- mutate(figure_1_df,shape_code=ifelse(manageable == TRUE,1,6))
+
+figure_1_df <- mutate(figure_1_df,shape_code = ifelse(significant == TRUE,
+                  ifelse(manageable == TRUE,6,1),
+                  8))
 
 figure_1_df$shape_code <- as.factor(figure_1_df$shape_code)
 
 figure_1_df <- mutate(figure_1_df, 
                       colour = ifelse(significant == TRUE,
-                                      ifelse(manageable == TRUE,"#41B6C4","#253494"),
-                                      "#737373")) 
+                                      ifelse(manageable == TRUE,"black","black"),
+                                      "gray42")) 
+
+figure_1_df <- mutate(figure_1_df, 
+                      linetype = ifelse(significant == TRUE,
+                                      ifelse(manageable == TRUE,1,2),
+                                      3)) 
+
 
 figure_1_df <- mutate(figure_1_df, 
                       legend = ifelse(significant == TRUE,
@@ -781,7 +790,7 @@ figure_1_df <- mutate(figure_1_df,
                                       "Not significant"))
 
 figure_1_df <- mutate(figure_1_df, y_axis_cols = ifelse(manageable == TRUE,
-                                                        "#253494", "#41B6C4"))
+                                                        "gray42", "#41B6C4"))
 
 #Save figure 1 dataframe if needed
 
@@ -798,39 +807,74 @@ tiff(paste(output_file_path,objectname, sep = "/"), units="in", width=10, height
 
 #make caterpillar plot
 
-figure_1 <- qplot(data = figure_1_df, x = reorder(pressures, Estimate), y = Estimate,
-                    ymin = Lower_CI, ymax = Upper_CI,
-                    ylab = "Estimate with 95% confidence intervals", 
-                    xlab = "Human Induced Pressures", geom = "blank", group = manageable) +
-                    geom_hline(yintercept = 0) +
-                    geom_linerange(data = figure_1_df, colour = figure_1_df$colour) +
-                    theme (axis.text=element_text(size= 9),
-                    axis.title=element_text(size= 9),
-                    axis.text.y = element_text(),
-                    axis.text.x = element_text(),
-                    legend.text = element_text(size = 9),
-                    legend.title = element_text(size = 9),
-                    legend.key.size = unit(0.4,"cm"),
-                    legend.position = "bottom",
-                    panel.grid.major = element_blank(),
-                    panel.grid.minor = element_blank(),
-                    panel.background = element_rect(fill = "#DEDEDE"),
-                    axis.line = element_line(colour = "black")) 
-                   
-                    
+# Coloured (warning: may not work properly as figure_1_df is now configured for
+# black and white)
 
+# figure_1 <- qplot(data = figure_1_df, x = reorder(pressures, Estimate), y = Estimate,
+#                     ymin = Lower_CI, ymax = Upper_CI,
+#                     ylab = "Estimate with 95% confidence intervals", 
+#                     xlab = "Human Induced Pressures", geom = "blank", group = manageable) +
+#                     geom_hline(yintercept = 0) +
+#                     geom_linerange(data = figure_1_df, colour = figure_1_df$colour) +
+#                     theme (axis.text=element_text(size= 9),
+#                     axis.title=element_text(size= 9),
+#                     axis.text.y = element_text(),
+#                     axis.text.x = element_text(),
+#                     legend.text = element_text(size = 9),
+#                     legend.title = element_text(size = 9),
+#                     legend.key.size = unit(0.4,"cm"),
+#                     legend.position = "bottom",
+#                     panel.grid.major = element_blank(),
+#                     panel.grid.minor = element_blank(),
+#                     panel.background = element_rect(fill = "#DEDEDE"),
+#                     axis.line = element_line(colour = "black")) 
+#                    
+# figure_1 <- figure_1 + facet_wrap(~ category, nrow = 2, scales = "free_x") + 
+#             coord_flip() + geom_point(aes(x = pressures, y = Estimate,                                                                                           
+#             shape = manageable, colour = colour, fill = colour), size = 1) + 
+#             scale_shape_manual(values = c(16,1))+
+#             scale_colour_manual(values=c("gray42","#41B6C4", "#737373")) +
+#             scale_fill_manual(values=c("#41B6C4","gray42","#737373")) +
+#             theme(strip.text.x = element_text(size = 11), 
+#             strip.background = element_rect(fill ="#B3B3B3"),
+#             panel.spacing = unit(1, "lines")) +
+#             labs(x = "") 
+#             
+# 
+# figure_1 <- figure_1 + theme(legend.position ="none")
+
+# Black and white
+
+figure_1 <- qplot(data = figure_1_df, x = reorder(pressures, Estimate), y = Estimate,
+                  ymin = Lower_CI, ymax = Upper_CI,
+                  ylab = "Estimate with 95% confidence intervals", 
+                  xlab = "Human Induced Pressures", geom = "blank", group = manageable) +
+                  geom_hline(yintercept = 0) +
+                  geom_linerange(data = figure_1_df, linetype = figure_1_df$linetype,
+                                 colour = figure_1_df$colour) +
+                  theme (axis.text=element_text(size= 9),
+                         axis.title=element_text(size= 9),
+                         axis.text.y = element_text(),
+                         axis.text.x = element_text(),
+                         legend.text = element_text(size = 9),
+                         legend.title = element_text(size = 9),
+                         legend.key.size = unit(0.4,"cm"),
+                         legend.position = "bottom",
+                         panel.grid.major = element_blank(),
+                         panel.grid.minor = element_blank(),
+                         panel.background = element_rect(fill = "#DEDEDE"),
+                         axis.line = element_line(colour = "black")) 
 
 figure_1 <- figure_1 + facet_wrap(~ category, nrow = 2, scales = "free_x") + 
-            coord_flip() + geom_point(aes(x = pressures, y = Estimate,                                                                                           
-            shape = manageable, colour = colour, fill = colour), size = 1) + 
-            scale_shape_manual(values = c(16,1))+
-            scale_colour_manual(values=c("#253494","#41B6C4", "#737373")) +
-            scale_fill_manual(values=c("#41B6C4","#253494","#737373")) +
+                 coord_flip() + geom_point(aes(x = pressures, y = Estimate, 
+                 shape = figure_1_df$shape_code, colour = figure_1_df$colour, fill = figure_1_df$colour), size = 1.5) +
+                 scale_shape_manual(values = c(1,16,8)) +
+                 scale_colour_manual(values=c("black","black", "gray54")) +
+                 scale_fill_manual(values=c("black","black", "gray54")) +
             theme(strip.text.x = element_text(size = 11), 
-            strip.background = element_rect(fill ="#B3B3B3"),
-            panel.spacing = unit(1, "lines")) +
+                  strip.background = element_rect(fill ="#B3B3B3"),
+                  panel.spacing = unit(1, "lines")) +
             labs(x = "") 
-            
 
 figure_1 <- figure_1 + theme(legend.position ="none")
 
