@@ -23,19 +23,20 @@ library(magrittr)
 #set working directory
 
 basedir <- "C:/Users/ssteven/Dropbox/Papers/MPA_paper/MPA_final"
-
 setwd(basedir)
 
-#create folder for current date to store output 
+# Check if an output for current dates exists, and if not
+# create folder for current date to store output 
 
 currentDate <- Sys.Date()
-
 output_dir <- paste(currentDate,"_output_files",sep="")
 
-dir.create(output_dir)
+if( !dir.exists( file.path(output_dir) ) ) {
+  dir.create( file.path(output_dir), recursive = TRUE )
+}
+
 
 dirs <- list.dirs()
-
 output_file_path <- dirs[ grepl(currentDate, dirs) ]
 
 # Read all files from directory and place in a list 
