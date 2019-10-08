@@ -1,5 +1,9 @@
 #All input files for this code can be downloaded from:
 
+https://figshare.com/projects/2018_MPA_input_files/35711
+
+Or separately:
+
 1_area_rasters
         
 To access the item, go to https://doi.org/10.6084/m9.figshare.7268405.v1
@@ -16,6 +20,6 @@ To access the item, go to https://doi.org/10.6084/m9.figshare.7268456.v1
         
 To access the item, go to https://doi.org/10.6084/m9.figshare.7268471.v1
 
-OR, if you don't have access to sufficient processing power, you can begin at line 142 by loading this .rda file (will still need mpa and area attribute files above (3 and 4) however:
+OR, if you don't have access to sufficient processing power, you can begin at line 142 by loading this mpadf.rda file (will still need mpa and area attribute files above (3 and 4) however:
 
 https://doi.org/10.6084/m9.figshare.7421621.v1 
