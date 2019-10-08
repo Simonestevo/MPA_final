@@ -25,6 +25,11 @@ library(magrittr)
 basedir <- "C:/Users/ssteven/Dropbox/Papers/MPA_paper/MPA_final"
 setwd(basedir)
 
+# Define whether you want to save output
+
+save_outputs <- "yes"
+#save_outputs <- no
+
 # Check if an output for current dates exists, and if not
 # create folder for current date to store output 
 
@@ -147,8 +152,13 @@ names(parent_area_list) <- area_names
 }
 
 #Save list
+
+if(save_outputs == "yes"){
+  
 objectname <- paste(currentDate,"_parent_area_list",".rda",sep="")
 save(parent_area_list, file=paste(output_file_path,objectname, sep = "/" ))
+
+}
 
 ## STEP 2 - ATTACH ATTRIBUTES, AGGREGATE, CLEAN AND SCALE DATA
 
@@ -358,8 +368,12 @@ mpa_df <- mpa_df[!no.inf,]
 
 # Save final scaled dataframe
 
+if(save_outputs == "yes"){
+
 objectname <- paste(currentDate,"_scaled_by_eez_mpa_df",".csv",sep="")
 write.csv(mpa_df, file = objectname)
+
+}
 
 ## STEP 3 - STATISTICS, TABLES AND FIGURES
 
@@ -395,11 +409,15 @@ table_s2_key <- cbind(pressures, pressure_key)
 names(table_s2) <- pressure_key
 rownames(table_s2) <- pressure_key
 
+if(save_outputs == "yes"){
+
 objectname <- paste(currentDate,"_table_S2",".csv",sep="")
 write.csv(table_s2, file=paste(output_file_path,objectname, sep = "/" ))
 
 objectname <- paste(currentDate,"_table_S2_key",".csv",sep="")
 write.csv(table_s2_key, file=paste(output_file_path,objectname, sep = "/" ))
+
+}
 
 #Return combinations of variables that exceed the 
 #correlation threshold of 0.7 (see Dormann etal. 2013)
@@ -475,8 +493,12 @@ raw_melted_boxplot_df <- mutate(raw_melted_boxplot_df, status = ifelse(grepl("un
 
 #Set up tiff to save figure S1 boxplots
 
+if(save_outputs == "yes"){
+
 objectname <- paste(currentDate,"_figure_S1",".tiff",sep="")
 tiff(file = (paste(output_file_path,objectname, sep = "/")), units="in", width=10, height=5, res=400)
+
+}
 
 
 figure_s1 <- ggplot(raw_melted_boxplot_df, aes (x = pressures, y = value),  ylim = c(-8, 8)) +
@@ -521,8 +543,12 @@ mpa_df[,c(9:26)] <- apply((mpa_df[,c(9:26)]), 2,"*", 10)
 
 #Save transformed df if needed
 
+if(save_outputs == "yes"){
+
 objectname <- paste(currentDate,"_mpa_df_transformed",".csv",sep="")
 write.csv(mpa_df, file = objectname)
+
+}
 
 
 #Create new boxplots comparing transformed protected and unprotected data
@@ -543,9 +569,12 @@ transformed_melted_boxplot_df <- mutate(transformed_melted_boxplot_df, status = 
 
 #Set up tiff to save figure s2 - transformed boxplots
 
+if(save_outputs == "yes"){
+
 objectname <- paste(currentDate,"_figure_S2",".tiff",sep="")
 tiff(file = (paste(output_file_path,objectname, sep = "/")), units="in", width=10, height=5, res=400)
 
+}
 
 figure_s2 <- ggplot(transformed_melted_boxplot_df, aes (x = pressures, y = value),  ylim = c(-8, 8)) +
                    geom_boxplot(outlier.colour="black", outlier.shape = 16,
@@ -634,9 +663,12 @@ mod_names <- c("All categories model", "Category Ia model", "Category Ib model",
 
 names(all_mods) <- mod_names
 
+if(save_outputs == "yes"){
+  
 objectname <- paste(currentDate,"_all_models",".rda",sep="")
 save(all_mods, file=paste(output_file_path,objectname, sep = "/" ))
 
+}
 
 ## To create Table 2
 
@@ -674,8 +706,12 @@ for (i in seq(along = all_mods)) {
 names(coefficient_list) <- mod_names
 coefficient_df <- ldply(coefficient_list,rbind)
 
+if(save_outputs == "yes"){
+
 objectname <- paste(currentDate,"_coefficients",".csv",sep="")
 write.csv(coefficient_df, file=paste(output_file_path,objectname, sep = "/" ))
+
+}
 
 # extract formulas etc. for each best model and store in table 1
 
@@ -735,8 +771,12 @@ rownames(table_2) <- c()
 
 #Save Table 1
 
+if(save_outputs == "yes"){
+  
 objectname <- paste(currentDate,"_table_2",".csv",sep="")
 write.csv(table_2, file=paste(output_file_path,objectname, sep = "/" ))
+
+}
 
 ##To create dataframe for Figure 1
 
@@ -795,16 +835,23 @@ figure_1_df <- mutate(figure_1_df, y_axis_cols = ifelse(manageable == TRUE,
 
 #Save figure 1 dataframe if needed
 
+if(save_outputs == "yes"){
+
 objectname <- paste(currentDate,"_figure_1_df",".rda",sep="")
 save(figure_1_df, file=objectname)
+
+}
 
 ## Plot Figure 1
 
 #set up tiff to save hi res plot (only need to do when figure is complete)
 
+if(save_outputs == "yes"){
+
 objectname <- paste(currentDate,"_figure_1",".tiff",sep="")
 tiff(paste(output_file_path,objectname, sep = "/"), units="in", width=10, height=5, res=400)
 
+}
 
 #make caterpillar plot
 
@@ -1113,6 +1160,8 @@ names(all.tables.list) <- table.names
 
 #Save tables as csv files 
 
+if(save_outputs == "yes"){
+
 for (i in seq_along(all.tables.list)) {
   
   filename = paste(currentDate,names(all.tables.list)[i], ".csv")
@@ -1120,5 +1169,5 @@ for (i in seq_along(all.tables.list)) {
   
 }
 
-
+}
 
