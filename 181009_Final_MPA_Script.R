@@ -3,7 +3,7 @@
 
 #####################
 
-# IMPORTANT - ALL INPUT FILES CAN BE ACCESSED FROM THE LINKS PROVIDED IN THE README OF THIS REPO
+# IMPORTANT - Links to the raw versions of the input data are provided in the readme.
 
 #####################
 
