@@ -848,8 +848,9 @@ save(figure_1_df, file=objectname)
 
 if(save_outputs == "yes"){
 
-objectname <- paste(currentDate,"_figure_1",".tiff",sep="")
-tiff(paste(output_file_path,objectname, sep = "/"), units="in", width=10, height=5, res=400)
+objectname <- paste(currentDate,"_figure_1_high_res",".tiff",sep="")
+  
+tiff(paste(output_file_path,objectname, sep = "/"), units="in", width=10, height=5, res=600)
 
 }
 
@@ -915,10 +916,11 @@ figure_1 <- qplot(data = figure_1_df, x = reorder(pressures, Estimate), y = Esti
 
 figure_1 <- figure_1 + facet_wrap(~ category, nrow = 2, scales = "free_x") + 
                  coord_flip() + geom_point(aes(x = pressures, y = Estimate, 
-                 shape = figure_1_df$shape_code, colour = figure_1_df$colour, fill = figure_1_df$colour), size = 1.5) +
-                 scale_shape_manual(values = c(1,16,8)) +
+                 shape = figure_1_df$shape_code, colour = figure_1_df$colour, 
+                 fill = figure_1_df$colour), size = 1.75) +
+                 scale_shape_manual(values = c(21,16,8)) +
                  scale_colour_manual(values=c("black","black", "gray54")) +
-                 scale_fill_manual(values=c("black","black", "gray54")) +
+                 scale_fill_manual(values=c("white","black", "gray54")) +
             theme(strip.text.x = element_text(size = 11), 
                   strip.background = element_rect(fill ="#B3B3B3"),
                   panel.spacing = unit(1, "lines")) +
