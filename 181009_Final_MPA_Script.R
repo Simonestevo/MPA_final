@@ -1,16 +1,21 @@
 
 # Using R version 3.5.2
 
-#####################
+# Note about input data ----
 
-# IMPORTANT - Links to the raw versions of the input data are provided in the readme.
+# IMPORTANT - This script is divided into two parts.  I do not have rights to 
+# publish the input data for Part 1, so please contact me if you have any questions
+# about this section (ssteven@deakin.edu.au)
 
-#####################
+# I have published the input data for Part 2 on figshare, it can be accessed here:
+# https://figshare.com/articles/180810_mpadf_rda/7421621
 
-# STEP 1 - CALCULATE PRESSURE VALUES FOR DIFFERENT AREAS (MPAs, UNPROTECTED AND EEZs)
+# Part 1 ----
+
+# STEP 1 - CALCULATE PRESSURE VALUES FOR DIFFERENT AREAS (MPAs, UNPROTECTED AND EEZs) ----
 
 #Load libraries
-# 
+
 library(plyr)
 library(data.table)
 library(tidyverse)
@@ -22,7 +27,7 @@ library(magrittr)
 
 #set working directory
 
-basedir <- "C:/Users/ssteven/Dropbox/Papers/MPA_paper/MPA_final"
+basedir <- # "Your directory path here"
 setwd(basedir)
 
 # Define whether you want to save output
@@ -58,7 +63,7 @@ directory_files<-function(directory){
 ## BUT - if you want to start from the very beginning, don't load the file
 ## below
 
-load('2018_MPA_Input_files/5_processed_data/2018-08-17_parent_area_list.rda')
+# load('2018_MPA_Input_files/5_processed_data/2018-08-17_parent_area_list.rda')
 
 
 # names for pressure dataframes
@@ -72,6 +77,7 @@ pressure_names<-c("acid", "art", "dd", "dndhbc", "dndlbc", "fert",
 # loaded "parent_area_list.rds"
 
 if ( !exists( "parent_area_list") )  {
+  
 #load processed area and pressure files - save files in folders names (1_area_rasters/ & 2_pressure_rasters) as below in the working directory
 
 area_files <- list.files(path='2018_MPA_Input_files/1_area_rasters/', 
@@ -160,7 +166,7 @@ save(parent_area_list, file=paste(output_file_path,objectname, sep = "/" ))
 
 }
 
-## STEP 2 - ATTACH ATTRIBUTES, AGGREGATE, CLEAN AND SCALE DATA
+## STEP 2 - ATTACH ATTRIBUTES, AGGREGATE, CLEAN AND SCALE DATA ----
 
 ##Prepare attribute tables for areas to merge with the value dataframes 
 # - need to do EEZ, Unprotected and MPA attributes separately
@@ -375,11 +381,15 @@ write.csv(mpa_df, file = objectname)
 
 }
 
-## STEP 3 - STATISTICS, TABLES AND FIGURES
+# Part 2 ----
 
-##IF STARTING FROM HERE, LOAD MPA DF
+## STEP 3 - STATISTICS, TABLES AND FIGURES ----
 
-#load('2018_MPA_Input_files/5_processed_data/2019-04-24_scaled_by_eez_mpa_df.rda')
+# The input data for part 2 can be downloaded from
+
+# https://doi.org/10.6084/m9.figshare.7421621.v1
+
+load('2018_MPA_Input_files/5_processed_data/2019-04-24_scaled_by_eez_mpa_df.rda')
 
 #libraries for stats, figures and tables
 
@@ -618,7 +628,7 @@ mpa_step_glm <- stepAIC(mpa_glm_result,scope = list(upper= ~acid_pressure_mean+a
                                                       uv_pressure_mean,lower= ~1))
 
 
-#######
+
 
 ### SLOW CODE ### may take a minute or so
 
@@ -854,43 +864,7 @@ tiff(paste(output_file_path,objectname, sep = "/"), units="in", width=10, height
 
 }
 
-#make caterpillar plot
-
-# Coloured (warning: may not work properly as figure_1_df is now configured for
-# black and white)
-
-# figure_1 <- qplot(data = figure_1_df, x = reorder(pressures, Estimate), y = Estimate,
-#                     ymin = Lower_CI, ymax = Upper_CI,
-#                     ylab = "Estimate with 95% confidence intervals", 
-#                     xlab = "Human Induced Pressures", geom = "blank", group = manageable) +
-#                     geom_hline(yintercept = 0) +
-#                     geom_linerange(data = figure_1_df, colour = figure_1_df$colour) +
-#                     theme (axis.text=element_text(size= 9),
-#                     axis.title=element_text(size= 9),
-#                     axis.text.y = element_text(),
-#                     axis.text.x = element_text(),
-#                     legend.text = element_text(size = 9),
-#                     legend.title = element_text(size = 9),
-#                     legend.key.size = unit(0.4,"cm"),
-#                     legend.position = "bottom",
-#                     panel.grid.major = element_blank(),
-#                     panel.grid.minor = element_blank(),
-#                     panel.background = element_rect(fill = "#DEDEDE"),
-#                     axis.line = element_line(colour = "black")) 
-#                    
-# figure_1 <- figure_1 + facet_wrap(~ category, nrow = 2, scales = "free_x") + 
-#             coord_flip() + geom_point(aes(x = pressures, y = Estimate,                                                                                           
-#             shape = manageable, colour = colour, fill = colour), size = 1) + 
-#             scale_shape_manual(values = c(16,1))+
-#             scale_colour_manual(values=c("gray42","#41B6C4", "#737373")) +
-#             scale_fill_manual(values=c("#41B6C4","gray42","#737373")) +
-#             theme(strip.text.x = element_text(size = 11), 
-#             strip.background = element_rect(fill ="#B3B3B3"),
-#             panel.spacing = unit(1, "lines")) +
-#             labs(x = "") 
-#             
-# 
-# figure_1 <- figure_1 + theme(legend.position ="none")
+# make caterpillar plot
 
 # Black and white
 
@@ -1002,17 +976,6 @@ names(table_list) <- short_mod_names
 
 #function to create formulas for top ten candidate models for each model category 
 #parameter "data" is tables created by from previous function.
-
-##TODO: Remove the code below where I've assigned objects to arguments to test 
-## the function (eg mod_name <- "cat ib')
-
-##TODO: I think to fix this function, it needs to take the bottom ten not the top
-# ten 
-
-mod_name <- "Category iii model"
-model <- all_mods[[5]]
-data <- table_list[[5]]
-drop <- 1
 
 drop_parameters <- function(data, model, mod_name, drop) {
   
